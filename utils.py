@@ -38,17 +38,18 @@ class PassiveCollector():
         for r_ind in range(len(self.sH.responses)):
             retry_question = True
             while retry_question:
-                print("Did you lie about statement {}? [y/n]".format(r_ind + 1))
+                print("Statment {} truth value [t/f]: ".format(r_ind + 1))
                 response = input().lower()
-                if response == 'y':
-                    self.sH.responses[r_ind][0] = 1 # 1 marks a lie
+                if response == 't':
+                    self.sH.responses[r_ind][0] = 1 # 0 is a truth
                     retry_question = False
                     break
-                elif response == 'n':
-                    self.sH.responses[r_ind][0] = 0 # 0 makes a not lie
+                elif response == 'f':
+                    self.sH.responses[r_ind][0] = 1 # 1 is a lie
                     retry_question = False
                     break
                 else:
+                    print(".... enter t/f: ")
                     retry_question = True         
 
 def full_collect(dstem = './data/'):
