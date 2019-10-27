@@ -18,6 +18,8 @@ class DataHandler():
 		self.data_reader = DirReader(dir_path)
 		self.X = self.data_reader.X
 		self.y = self.data_reader.y 
+		print("DATA HANDLER from DirReader")
+		print("y: ", self.y)
 		# get label indices (responses)
 		self.li = np.array([y_i for y_i in range(len(self.y)) if self.y[y_i] != None])
 		self.ui = np.array([y_i for y_i in range(len(self.y)) if not y_i in self.li])
@@ -28,6 +30,7 @@ class DataHandler():
 		self.li = np.array([y_i for y_i in range(len(self.y)) if self.y[y_i] != None])
 		self.ui = np.array([y_i for y_i in range(len(self.y)) if not y_i in self.li])
 		# labeled
+		print("LI: ", self.li)
 		self.X_l = self.X[self.li]
 		self.y_l = self.y[self.li]
 		# unlabeled 		
@@ -45,9 +48,20 @@ class DataHandler():
 		self.X_train, self.y_train = self.X[train_inds, :], self.y[train_inds]
 		self.X_test, self.y_test = self.X[test_inds, :], self.y[test_inds]
 		self.divide_labeled()
+	# util
+	def append_sample(self, sample):
+		# appends a sample to X 
+		s = sample[0]
+		X_list = list(self.X)
+		X_list.append(np.array(s))
+		self.X = np.append(X_list)
+	def scale_sample(self, sample):
+		# scales an external sample in relation to X
+		new_X = preprocessing.scale(np.append(new_X, sample))
+		return new_X[-1]
 	# Transform 
 	def scale(self):
-		self.X = preprocessing.scale(X)
+		self.X = preprocessing.scale(self.X)
 		self.divide_labeled()
 	def get_ratios(self):
 		self.X = self.data_reader.X_ratios
@@ -61,6 +75,7 @@ class DataHandler():
 		high = float(highcut) / nyq 
 		b, a = signal.butter(5, [low, high], 'band')
 		# filter each feature
+		print("SHAPE: ", self.X.shape)
 		for feature_ind in range(self.X.shape[1]):
 			self.X[:, feature_ind] = signal.filtfilt(b, a, self.X[:, feature_ind])
 		self.divide_labeled()

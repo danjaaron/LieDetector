@@ -18,6 +18,7 @@ class StreamHandler():
         self.handler_attempts = 4
         self.key_t = 1 # time to sleep after key press
         self.num_responses = 0
+        self.latest_timestamp = 0
 
         # key press events 
         self.terminate_key = 'q' # this key press triggers global terminate
@@ -31,7 +32,7 @@ class StreamHandler():
         self.response_event = threading.Event()
 
         # timestamping 
-        # self.latest_timestamp = None
+        self.latest_timestamp = 0
 
         # saved data 
         self.samples = list() # [[sample, timestamp], ... ]
