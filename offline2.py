@@ -1,10 +1,5 @@
 '''
-Uses a QDA model fit on ./data/ to predict new data
-
-TODO: Only print predictions for MOST RECENT collect (not all offline collects)
-
-###!!!!!!! PROB: Full collect is going to ask to verify. This is dumb -- verifying responses and seeing QDA predict that. 
-INSTEAD -- go straight to online predict.
+Offline QDA, but it verifies correct answers AFTER submitting predictions (so retained prompt as well)
 '''
 
 from utils import *
@@ -44,47 +39,63 @@ def verify_model_load():
 	percent_right = 100.*(1.0 - (float(num_wrong)/float(num_total)))
 	print("percent acc: ", percent_right)
 
-def offline_predict(collect_new = True, dstem = './data_offline/'):
+def offline_pre(dstem = './data_offline/'):
 	''' Generate new data from new interrogation, then store offline and predict with saved QDA model '''
+	''' NOTE: collect False makes NO SENSE. The whole point is to collect, and only show predictions on
+	that most recent collect, and no other pickles in the folder. '''
+
 	# load latest QDA model 
 	clf = load_model("QDA")
 
 	# collect data
-	if collect_new:
-		full_collect(dstem)
+	p = offline_collect(dstem = dstem, save = True) # hard False so that can assign labels etc
+
 	# process last collect
-	d = DataHandler(dstem)
+	d = DataHandler(dir_path = dstem)
 	d.bandpass(0.1, 2.0)
 	# d.split(0.8)
 	d.scale()
 
+	# (1) - get timestamps of recent responses (should have char labels)
+	response_timestamps = [r[1] for r in d.data_reader.responses if type(r[0]) == type('bro')]
+	print("response timestamps: ", response_timestamps)
+	# (2) - get samples by timestamps of recent responses (not li)
+	response_ts_indices = [d.data_reader.timestamps.index(rts) for rts in response_timestamps]
+	# (3) - predict samples of most recent responses 
+	preds = clf.predict(d.X[response_ts_indices, :])
+	# (4) - assign labels
+	print("PREDICTIONS: ", preds)
+	
+	p.assign_labels()
+	p.pickle()
+	
+	'''
 	# predict on the LABELED indices 
 	preds = clf.predict(d.X[d.li, :])
 	print("PREDICTIONS: ", preds)
+	print(d.data_reader.responses)
+	print(len(d.data_reader.timestamps))
+	print(len(d.X))
+	'''
+
+	'''
+	print("TRUE: ", d.y[d.li])
 	assert(len(preds) == len(d.li))
+
+	if save_new:
+		# p.assign_labels()
+		p.pickle()
+	'''
 
 	# to get online .... 
 	# .... I need ALL the samples to bandpass and scale, but only need to actually predict on labeled
 
-	'''
-	# split collected data
-	X, y = d.X, d.y
-	train_x, train_y = d.X_train, d.y_train 
-	test_x, test_y = d.X_test, d.y_test
-	# load latest QDA model 
-	clf = load_model("QDA")
-	# predict 
-	preds = clf.predict(test_x)
-	print("predicted")
-	print("preds: ", preds)
-	print("labels: ", test_y)
-	num_wrong = len([i for i in range(len(preds)) if (preds[i] != test_y[i])])
-	num_total = len(test_y)
-	percent_right = 100.*(1.0 - (float(num_wrong)/float(num_total)))
-	print("percent acc: ", percent_right)
-	'''
-
 
 if __name__ == '__main__':
-	offline_predict(collect_new = False, dstem = './data_offline/')
+	passed_args = sys.argv[1:]
+	collect = False
+	if '-c' in passed_args:
+		collect = True
+
+	offline_pre(dstem = './data_offline/')
 	# verify_model_load()

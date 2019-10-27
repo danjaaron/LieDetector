@@ -64,13 +64,33 @@ def full_collect(dstem = './data/', save = True):
     name = input().strip()
     # data_path = dstem #'./data/'
     p = PassiveCollector(dstem, name)
-    p.assign_labels()
     if save:
+        # verify and save 
+        p.assign_labels()
         print("Saving collect.")
         p.pickle()
     else:
+        # dont assign labels, just return collector so we can do it later (after predictions)
         print("NOT saving collect, samples will NOT be pickled.")
+        return p
     # print(p.sH.responses)
+
+def offline_collect(dstem = './data/', save = True):
+    ''' Collect and pickle, but dont assign real labels yet '''
+    print("What are your initials?")
+    flush_input()
+    sys.stdin.flush()
+    name = input().strip()
+    # data_path = dstem #'./data/'
+    p = PassiveCollector(dstem, name)
+    if save:
+        # verify and save 
+        print("Saving collect.")
+        p.pickle()
+    else:
+        # dont assign labels, just return collector so we can do it later (after predictions)
+        print("NOT saving collect, samples will NOT be pickled.")
+    return p
 
 def read_data(dstem):
     with open(dstem, 'rb') as handle:
@@ -88,16 +108,16 @@ class DirReader():
     def __init__(self, data_dir):
         self.data_dir = data_dir
         self.dir_files = [filename for filename in os.listdir(data_dir) if (".pickle" in filename)]
-        print("DirReader files: ", self.dir_files)
+        # print("DirReader files: ", self.dir_files)
         # collect all fomr dir
         master_samples = list()
         master_responses = list()
         for d in self.dir_files:
             s, r = read_data(self.data_dir + d)
-            print("DirReader file S: {} R: {}".format(len(s), len(r)))
+            # print("DirReader file S: {} R: {}".format(len(s), len(r)))
             master_samples.extend(s)
             master_responses.extend(r)
-        print("DirReader MASTER S: {} R: {}".format(len(master_samples), len(master_responses)))
+        # print("DirReader MASTER S: {} R: {}".format(len(master_samples), len(master_responses)))
         self.samples = master_samples
         self.responses = master_responses
         # get all timestamps 
@@ -105,12 +125,16 @@ class DirReader():
         all_t.extend([_[1] for _ in self.responses if not _[1] in all_t])
         self.timestamps = sorted(all_t)
         # print("DirReader timestamps: ", len(self.timestamps))
-        print("DirReader # responses: ", len(self.responses))
+        # print("DirReader # responses: ", len(self.responses))
         # get samples and labels 
+        # self.timestamp_to_sample = dict()
+        # self.timestamp_to_response = dict()
         X, y = [], []
         for t in self.timestamps:
             match_sample = [s[0] for s in self.samples if s[1] == t][0]
+            # self.timestamp_to_sample[t] = match_sample
             match_label = [r[0] for r in self.responses if r[1] == t]
+            # self.
             if not match_label:
                 match_label = None 
             else:

@@ -18,8 +18,8 @@ class DataHandler():
 		self.data_reader = DirReader(dir_path)
 		self.X = self.data_reader.X
 		self.y = self.data_reader.y 
-		print("DATA HANDLER from DirReader")
-		print("y: ", self.y)
+		# print("DATA HANDLER from DirReader")
+		# print("y: ", self.y)
 		# get label indices (responses)
 		self.li = np.array([y_i for y_i in range(len(self.y)) if self.y[y_i] != None])
 		self.ui = np.array([y_i for y_i in range(len(self.y)) if not y_i in self.li])
@@ -30,7 +30,7 @@ class DataHandler():
 		self.li = np.array([y_i for y_i in range(len(self.y)) if self.y[y_i] != None])
 		self.ui = np.array([y_i for y_i in range(len(self.y)) if not y_i in self.li])
 		# labeled
-		print("LI: ", self.li)
+		# print("LI: ", self.li)
 		self.X_l = self.X[self.li]
 		self.y_l = self.y[self.li]
 		# unlabeled 		
@@ -75,7 +75,7 @@ class DataHandler():
 		high = float(highcut) / nyq 
 		b, a = signal.butter(5, [low, high], 'band')
 		# filter each feature
-		print("SHAPE: ", self.X.shape)
+		# print("SHAPE: ", self.X.shape)
 		for feature_ind in range(self.X.shape[1]):
 			self.X[:, feature_ind] = signal.filtfilt(b, a, self.X[:, feature_ind])
 		self.divide_labeled()
