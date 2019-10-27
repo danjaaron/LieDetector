@@ -46,3 +46,38 @@ num_wrong = len([i for i in range(len(preds)) if (preds[i] != test_y[i])])
 num_total = len(test_y)
 percent_right = 100.*(1.0 - (float(num_wrong)/float(num_total)))
 print("percent acc: ", percent_right)
+
+# determine whether to save model 
+def check_save_model(attempts = 3): 
+	print("Save model?")
+	save_response = input().lower()
+	if save_response in ['y', 'n']:
+		return save_response
+	elif attempts <= 0:
+		print("Max invalid responses, quitting without saving.")
+	else:
+		print("Received invalid response: ", save_response)
+		print("please retry...")
+		return check_save_model(attempts - 1)
+
+def pickle_model(model, filename):
+	# get full filename
+	full_name = './models/' + filename + str(len([f for f in os.listdir('./models/') if filename in f])) + '.pickle'
+	print("Saving model as: ", full_name)
+	pickle.dump(model, open(full_name, 'wb'))
+	print("Model saved!")
+
+
+def load_model(filename):
+	# get full filename
+	full_name = './models/' + filename + str(len([f for f in os.listdir('./models/') if filename in f])-1) + '.pickle'
+	print("Loading model: ", full_name)
+	model = pickle.load(open(full_name, 'rb'))
+	print("Model loaded!")
+	return model
+
+save_response = check_save_model()
+if save_response == 'y':
+	pickle_model(clf, "QDA")
+else:
+	print("Quitting without saving.")

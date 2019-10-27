@@ -55,7 +55,7 @@ class PassiveCollector():
                     print(".... enter t/f: ")
                     retry_question = True         
 
-def full_collect(dstem = './data/'):
+def full_collect(dstem = './data/', save = True):
     print("What are your initials?")
     flush_input()
     sys.stdin.flush()
@@ -63,7 +63,11 @@ def full_collect(dstem = './data/'):
     data_path = dstem #'./data/'
     p = PassiveCollector(data_path, name)
     p.assign_labels()
-    p.pickle()
+    if save:
+        print("Saving collect.")
+        p.pickle()
+    else:
+        print("NOT saving collect, samples will NOT be pickled.")
     # print(p.sH.responses)
 
 def read_data(dstem):
