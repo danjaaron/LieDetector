@@ -1,9 +1,10 @@
 '''
 Handles streaming LSL data
+# (!) TODO: Record methodology (prompt, response)
 '''
 
 import threading
-import time
+import time, sys
 import logging, keyboard
 from pylsl import StreamInlet, resolve_stream
 
@@ -20,8 +21,9 @@ class StreamHandler():
 
         # key press events 
         self.terminate_key = 'q' # this key press triggers global terminate
-        self.response_key = ' ' # this key press marks a response entry
+        self.response_key = 'p' # this key press marks a response entry
         self.response_pressed = False
+        # self.response_keyword = None
 
         # events 
         self.stream_event = threading.Event()
@@ -29,7 +31,7 @@ class StreamHandler():
         self.response_event = threading.Event()
 
         # timestamping 
-        self.latest_timestamp = None
+        # self.latest_timestamp = None
 
         # saved data 
         self.samples = list() # [[sample, timestamp], ... ]
@@ -64,7 +66,7 @@ class StreamHandler():
 
     def collect_threads(self):
         self.t2.join()
-        print("joined handler")
+        print("Ready to begin.")
         # NOTE: dont need to collect stream, connect threads in order to get samples
         # self.t3.join()
         # print("joined t3")
@@ -90,7 +92,8 @@ class StreamHandler():
     def keyhandle(self):
         ''' Initiates a terminate signal if a specific key is pressed '''
         logging.debug("KEYHANDLE: Press Q at any time to TERMINATE all threads")
-        logging.debug("KEYHANDLE: Press SPACEBAR at any time to mark RESPONSE")
+        logging.debug("KEYHANDLE: Press P at any time to enter PROMPT, and SPACEBAR to mark RESPONSE")
+        # logging.debug("KEYHANDLE: Press SPACEBAR at any time to mark RESPONSE")
         while not self.check_terminate():
             if self.check_terminate():
                 logging.debug("KEYHANDLE: Terminate called -- QUIT")
@@ -103,10 +106,14 @@ class StreamHandler():
                 elif keyboard.is_pressed(self.response_key):
                     # response recorded
                     if not self.response_pressed:
-                        print('KEYHANDLER: SPACEBAR pressed, marking response')
                         self.response_pressed = True
+                        flush_input()
+                        print('KEYHANDLER: Type PROMPT, return after response complete.')
+                        # sys.stdin.flush()
+                        latest_prompt = str(input("Prompt: "))
+                        ltimestamp = self.latest_timestamp
                         self.num_responses += 1
-                        self.responses.append([None, self.latest_timestamp]) # leave label as none by default
+                        self.responses.append([latest_prompt, ltimestamp]) # leave label as none by default
                     # key being held down
                     elif self.response_pressed:
                         pass
@@ -124,16 +131,16 @@ class StreamHandler():
         
         while not self.stream_event.isSet():
             if self.check_terminate():
-                logging.debug("HANDLER: Terminate called -- QUIT")
+                # logging.debug("HANDLER: Terminate called -- QUIT")
                 return
-            logging.debug('HANDLER waiting to hear from LSL')
+            # logging.debug('HANDLER waiting to hear from LSL')
             event_is_set = self.stream_event.wait(self.handler_t)
             if self.check_terminate():
-                logging.debug("HANDLER: Terminate called -- QUIT")
+                # logging.debug("HANDLER: Terminate called -- QUIT")
                 return
             attempt += 1
-            logging.debug('HANDLER event set: %s', event_is_set)
-            logging.debug('HANDLER attempt {}/{}'.format(attempt, self.handler_attempts))
+            # logging.debug('HANDLER event set: %s', event_is_set)
+            # logging.debug('HANDLER attempt {}/{}'.format(attempt, self.handler_attempts))
             # stream  
             if event_is_set:
                 logging.debug('HANDLER SUCCESS - event is SET! Keep streaming until im told to stop') 
@@ -144,7 +151,7 @@ class StreamHandler():
                 # assert NotImplementedError # IMPLEMENT: take keyboard input
                 # self.stream_event.clear()
             elif attempt >= self.handler_attempts:
-                logging.debug('HANDLER FAIL - attempt max reached! Quitting, TERMINATING')
+                # logging.debug('HANDLER FAIL - attempt max reached! Quitting, TERMINATING')
                 self.terminate_event.set()
                 return
             else:
@@ -152,12 +159,12 @@ class StreamHandler():
         # logging.debug('HANDLER broke out cause event set')
 
     def connect(self):
-        logging.debug('CONN: initializing stream / inlet')
+        # logging.debug('CONN: initializing stream / inlet')
         # initiate LSL
         self.streams = resolve_stream('type', 'NIRS')
         self.inlet = StreamInlet(self.streams[0])
         # attempts to pull sample 
-        logging.debug('CONN: pulling initial sample')
+        # logging.debug('CONN: pulling initial sample')
         sample, timestamp = self.sample() #self.inlet.pull_sample()
         # print("CONN: got (t, s): ({}, {}/{})".format(timestamp, len([_ for _ in sample if _ != 0.0]), len(sample), sample))
         # connects to LSL, starts streaming
@@ -184,18 +191,18 @@ class StreamHandler():
         event_is_set = self.stream_event.isSet()
         while not event_is_set:
             if self.check_terminate():
-                logging.debug("STREAM: Terminate called -- QUIT")
+                # logging.debug("STREAM: Terminate called -- QUIT")
                 return
-            logging.debug("STREAM: no event, can't collect, retry with 1 s timeout")
+            # logging.debug("STREAM: no event, can't collect, retry with 1 s timeout")
             event_is_set = self.stream_event.wait(self.stream_t)
 
         logging.debug("STREAM: events up, time to sample!")
-        print("STREAM: PRE thread enum ", list(threading.enumerate()))    
+        # print("STREAM: PRE thread enum ", list(threading.enumerate()))    
         # while streaming is on
         while event_is_set:
             # check if global terminate
             if self.check_terminate():
-                logging.debug("STREAM: Terminate called -- QUIT")
+                # logging.debug("STREAM: Terminate called -- QUIT")
                 return
             # pull sample 
             # logging.debug("STREAM: Sampling")
@@ -204,10 +211,19 @@ class StreamHandler():
             # check if stream event changed
             event_is_set = self.stream_event.wait(self.stream_t)
 
-        logging.debug("STREAM: event was CLEARED. Time to stop sampling.")
+        # logging.debug("STREAM: event was CLEARED. Time to stop sampling.")
         # check active threads
-        print("STREAM: POST thread enum ", list(threading.enumerate())) # all stopped except itself, cause it hasnt yet returned
-        
+        # print("STREAM: POST thread enum ", list(threading.enumerate())) # all stopped except itself, cause it hasnt yet returned
+
+def flush_input():
+    # print("input flushing")
+    try:
+        import msvcrt
+        while msvcrt.kbhit():
+            msvcrt.getch()
+    except ImportError:
+        import sys, termios    #for linux/unix
+        termios.tcflush(sys.stdin, termios.TCIOFLUSH)
 
 if __name__ == '__main__':
     s = StreamHandler()
