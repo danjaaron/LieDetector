@@ -73,8 +73,8 @@ def read_data(dstem):
     samples = b['samples']
     responses = b['responses']
     # print("SAMPLES: ", [(len(s[0]), s[1]) for s in samples])
-    print("# SAMPLES: ", len(samples))
-    print("RESPONSES: ", [r for r in responses])
+    # print("# SAMPLES: ", len(samples))
+    # print("RESPONSES: ", [r for r in responses])
     return [samples, responses]
 
 
@@ -86,15 +86,42 @@ class DirReader():
         master_samples = list()
         master_responses = list()
         for d in self.dir_files:
+            if '0' in d or '1' in d or '2' in d:
+                continue
             s, r = read_data(self.data_dir + d)
             master_samples.extend(s)
             master_responses.extend(r)
-        print("LEN MASTER S: {} R: {}".format(len(master_samples), len(master_responses)))
+        # print("LEN MASTER S: {} R: {}".format(len(master_samples), len(master_responses)))
         self.samples = master_samples
         self.responses = master_responses
+        # get all timestamps 
+        all_t = [_[1] for _ in self.samples]
+        all_t.extend([_[1] for _ in self.responses])
+        self.timestamps = sorted(all_t)
+        # get samples and labels 
+        X, y = [], []
+        for t in self.timestamps:
+            match_sample = [s[0] for s in self.samples if s[1] == t][0]
+            match_label = [r[0] for r in self.responses if r[1] == t]
+            if not match_label:
+                match_label = None 
+            else:
+                match_label = match_label[0]
+            X.append(match_sample)
+            y.append(match_label)
+        self.X = np.array(X)
+        self.X_ratios = np.array([np.divide(x[::2], x[1::2]) for x in self.X])
+        self.y = np.array(y)
+        assert(len(self.X) == len(self.y))
+
+
 
 if __name__ == '__main__':
-    # full_collect()
-    # read_data('./data/Daniel0.pickle')
     dr = DirReader('./data/')
+    print(type(dr.X))
+    print(dr.X[:, 1])
+    # get data matrix
+    # dr.matrix_stitch()
+
+
     
