@@ -12,14 +12,17 @@ Plots PCA of base data
 '''
 
 plt_none_labeled = False
-dim3_plot = True
+dim3_plot = False
 
 # get data matrix for directory 
 d = DataHandler('./data/')
-d.bandpass(0.1, 0.6)
+# d.scale()
+d.bandpass(0.2, 2.0)
+# d.scale()
+d.divide_labeled()
 X, y = d.X, d.y 
 # X = samples
-X = preprocessing.scale(X)
+# X = preprocessing.scale(X)
 # X_scaled = preprocessing.scale(X)
 print("NUM SAMPLES: ", len(X))
 

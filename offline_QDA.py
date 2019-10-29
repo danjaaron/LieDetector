@@ -86,5 +86,5 @@ def offline_predict(collect_new = True, dstem = './data_offline/'):
 
 
 if __name__ == '__main__':
-	offline_predict(collect_new = False, dstem = './data_offline/')
-	# verify_model_load()
+	# offline_predict(collect_new = False, dstem = './data/')
+	verify_model_load()

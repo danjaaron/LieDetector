@@ -1,5 +1,6 @@
 '''
 Offline QDA, but it verifies correct answers AFTER submitting predictions (so retained prompt as well)
+... note -- only uses my data as base, should use as many peoples as possible (automate this process)
 '''
 
 from utils import *
@@ -56,6 +57,7 @@ def offline_pre(dstem = './data_offline/'):
 	# d.split(0.8)
 	d.scale()
 
+	'''
 	# (1) - get timestamps of recent responses (should have char labels)
 	response_timestamps = [r[1] for r in d.data_reader.responses if type(r[0]) == type('bro')]
 	print("response timestamps: ", response_timestamps)
@@ -68,7 +70,22 @@ def offline_pre(dstem = './data_offline/'):
 	
 	p.assign_labels()
 	p.pickle()
-	
+	sys.exit()
+
+	'''
+	print("pred by ind response")
+	pred_text_dict = {1: 'LIE', 0: 'TRUTH'}
+	# PREDICT WITH RESPONSE PROMPT 
+	for r in d.data_reader.responses:
+		response_text, response_time = r
+		if response_text is None or type(response_text) != type('bro'):
+			continue 
+		response_index = d.data_reader.timestamps.index(response_time)
+		pred = clf.predict([d.X[response_index, :]])
+		predicted_text = pred_text_dict[pred[0]]
+		print("RESPONSE {} PREDICTED {} ".format(response_text, predicted_text))
+	# response_timestamps = [r[1] for r in d.data_reader.responses if type(r[0]) == type('bro')]
+	sys.exit()
 	'''
 	# predict on the LABELED indices 
 	preds = clf.predict(d.X[d.li, :])
@@ -85,17 +102,13 @@ def offline_pre(dstem = './data_offline/'):
 	if save_new:
 		# p.assign_labels()
 		p.pickle()
-	'''
+	
 
 	# to get online .... 
 	# .... I need ALL the samples to bandpass and scale, but only need to actually predict on labeled
-
+	'''
 
 if __name__ == '__main__':
-	passed_args = sys.argv[1:]
-	collect = False
-	if '-c' in passed_args:
-		collect = True
 
 	offline_pre(dstem = './data_offline/')
 	# verify_model_load()
